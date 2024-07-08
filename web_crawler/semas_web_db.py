@@ -3,7 +3,9 @@ import os
 import sqlite3
 from playwright.async_api import async_playwright, TimeoutError
 from bs4 import BeautifulSoup
-os.chdir('../')
+from datetime import datetime
+
+os.chdir('C:\\Users\\jinyoungkim0308\\seoul_prompthon')
 # SQLite 데이터베이스 설정
 db_conn = sqlite3.connect('./rdbms/semas.db')
 
@@ -52,7 +54,9 @@ def parse_and_store(html, key):
     metadata['content'] = soup.select_one(
         'td.cont').text.strip() if soup.select_one('td.cont') else ''
 
-    # Insert into database, ignoring duplicates
+    now = datetime.now().isoformat()
+
+    # Insert or update into database
     cursor = db_conn.cursor()
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS posts (
@@ -61,27 +65,38 @@ def parse_and_store(html, key):
         views INTEGER,
         author TEXT,
         date TEXT,
-        content TEXT
+        content TEXT,
+        created_at TEXT,
+        updated_at TEXT
     )
     """)
 
-    cursor.execute("""
-    INSERT OR IGNORE INTO posts (key, title, views, author, date, content) 
-    VALUES (?, ?, ?, ?, ?, ?)
-    """, (metadata.get('key', ''), metadata.get('title', ''), metadata.get('views', ''), metadata.get('author', ''), metadata.get('date', ''), metadata.get('content', '')))
+    cursor.execute("SELECT 1 FROM posts WHERE key = ?", (metadata['key'],))
+    exists = cursor.fetchone()
+
+    if exists:
+        print(f"Key {metadata['key']} already exists. Updating record.")
+        cursor.execute("""
+        UPDATE posts SET title = ?, views = ?, author = ?, date = ?, content = ?, updated_at = ? WHERE key = ?
+        """, (metadata.get('title', ''), metadata.get('views', ''), metadata.get('author', ''), metadata.get('date', ''), metadata.get('content', ''), now, metadata['key']))
+    else:
+        cursor.execute("""
+        INSERT INTO posts (key, title, views, author, date, content, created_at, updated_at) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """, (metadata.get('key', ''), metadata.get('title', ''), metadata.get('views', ''), metadata.get('author', ''), metadata.get('date', ''), metadata.get('content', ''), now, now))
+
     db_conn.commit()
 
 
 async def fetch_all_links(base_url, view_base_url):
     async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True)
+        browser = await p.chromium.launch(headless=False)
         context = await browser.new_context()
         page = await context.new_page()
 
         page_number = 1  # Start from page 1
         all_links = []
 
-        # for _ in range(3):  # Limiting to 3 iterations
         while True:
             url = f"{base_url}&page={page_number}"
             await page.goto(url)
@@ -113,7 +128,7 @@ async def main():
     links = await fetch_all_links(base_url, view_base_url)
 
     async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True)
+        browser = await p.chromium.launch(headless=False)
         context = await browser.new_context()
         page = await context.new_page()
 

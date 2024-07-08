@@ -5,7 +5,7 @@ from Docs_Parsing_JY import extract_image, extract_text
 from glob import glob
 import os
 from dotenv import load_dotenv
-openaijykey='./seoul_prompthon/.env'
+openaijykey='./.env'
 load_dotenv(openaijykey)
 openai_api_key = os.getenv("OPENAI_API_KEY_SSIMU")
 os.environ["OPENAI_API_KEY"] = openai_api_key

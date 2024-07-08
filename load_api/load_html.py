@@ -2,7 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 from langchain.schema import Document
 from glob import glob
-from seoul_prompthon.ChatLLM import load_llm
+from ChatLLM import load_llm
 from langchain_core.prompts import ChatPromptTemplate
 from langchain.chains.combine_documents import create_stuff_documents_chain
 import pandas as pd

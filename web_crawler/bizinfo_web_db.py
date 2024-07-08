@@ -1,21 +1,15 @@
 import asyncio
 import os
 import sqlite3
-import chardet
+from datetime import datetime
 from playwright.async_api import async_playwright, TimeoutError
 from bs4 import BeautifulSoup
-import unicodedata
-import re
 
-os.chdir('../')
+os.chdir('C:\\Users\\jinyoungkim0308\\seoul_prompthon')
+
 # SQLite 데이터베이스 설정
-print(os.getcwd())
 db_conn = sqlite3.connect('./rdbms/bizinfo.db')
 
-def clean_filename(filename):
-    filename = unicodedata.normalize('NFD', filename)
-    filename = re.sub(r'[^\u1100-\u11FF\u3130-\u318F\uA960-\uA97F\uAC00-\uD7AF\w\s.-]', '', filename)
-    return unicodedata.normalize('NFC', filename)
 
 async def fetch_page_content(page, url, key):
     await page.goto(url)
@@ -33,25 +27,12 @@ async def fetch_page_content(page, url, key):
                 async with page.expect_download() as download_info:
                     await link.click()
                 download = await download_info.value
-                suggested_filename = download.suggested_filename
-
-                print(f"Original filename: {suggested_filename}")
-
-                # UTF-8로 강제 인코딩
-                filename = suggested_filename.encode('utf-8', errors='ignore').decode('utf-8')
-                
-                # 파일명 정제
-                filename = clean_filename(filename)
-
-                print(f"Cleaned filename: {filename}")
-
+                filename = download.suggested_filename
                 file_path = os.path.join(downloads_folder, filename)
                 await download.save_as(file_path)
                 print(f"Downloaded: {file_path}")
             except TimeoutError:
                 print(f"Download timeout for link: {link_text}")
-            except Exception as e:
-                print(f"Failed to download {link_text}: {e}")
 
     return content
 
@@ -84,26 +65,33 @@ def parse_and_store(html, key):
         사업개요 TEXT,
         사업신청_방법 TEXT,
         사업신청_사이트 TEXT,
-        문의처 TEXT
+        문의처 TEXT,
+        created_at TEXT,
+        updated_at TEXT
     )
     """)
 
-    cursor.execute("SELECT COUNT(1) FROM projects WHERE key=?", (metadata['key'],))
-    exists = cursor.fetchone()[0]
+    cursor.execute("SELECT 1 FROM projects WHERE key = ?", (metadata['key'],))
+    exists = cursor.fetchone()
 
-    if not exists:
+    now = datetime.now().isoformat()
+    if exists:
+        print(f"Key {metadata['key']} already exists. Updating record.")
         cursor.execute("""
-        INSERT INTO projects (key, 소관부처_지자체, 사업수행기관, 신청기간, 사업개요, 사업신청_방법, 사업신청_사이트, 문의처) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        """, (metadata.get('key', ''), metadata.get('소관부처·지자체', ''), metadata.get('사업수행기관', ''), metadata.get('신청기간', ''), metadata.get('사업개요', ''), metadata.get('사업신청 방법', ''), metadata.get('사업신청 사이트', ''), metadata.get('문의처', '')))
-        db_conn.commit()
+        UPDATE projects SET 소관부처_지자체 = ?, 사업수행기관 = ?, 신청기간 = ?, 사업개요 = ?, 사업신청_방법 = ?, 사업신청_사이트 = ?, 문의처 = ?, updated_at = ?
+        WHERE key = ?
+        """, (metadata.get('소관부처·지자체', ''), metadata.get('사업수행기관', ''), metadata.get('신청기간', ''), metadata.get('사업개요', ''), metadata.get('사업신청 방법', ''), metadata.get('사업신청 사이트', ''), metadata.get('문의처', ''), now, metadata['key']))
     else:
-        print(f"Key {metadata['key']} already exists in the database.")
+        cursor.execute("""
+        INSERT INTO projects (key, 소관부처_지자체, 사업수행기관, 신청기간, 사업개요, 사업신청_방법, 사업신청_사이트, 문의처, created_at, updated_at) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (metadata.get('key', ''), metadata.get('소관부처·지자체', ''), metadata.get('사업수행기관', ''), metadata.get('신청기간', ''), metadata.get('사업개요', ''), metadata.get('사업신청 방법', ''), metadata.get('사업신청 사이트', ''), metadata.get('문의처', ''), now, now))
+    db_conn.commit()
 
 
 async def fetch_all_links(base_url, view_base_url):
     async with async_playwright() as p:
-        browser = await p.firefox.launch(headless=False)  # Firefox 브라우저 사용
+        browser = await p.chromium.launch(headless=False)
         context = await browser.new_context()
         page = await context.new_page()
 
@@ -137,7 +125,7 @@ async def main():
     links = await fetch_all_links(base_url, view_base_url)
 
     async with async_playwright() as p:
-        browser = await p.firefox.launch(headless=False)  # Firefox 브라우저 사용
+        browser = await p.chromium.launch(headless=False)
         context = await browser.new_context()
         page = await context.new_page()
 

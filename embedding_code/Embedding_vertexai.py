@@ -8,7 +8,7 @@ PROJECT_ID = "prompthon-prd-19"
 REGION = "us-central1"
 
 # 환경 변수 설정
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/home/ncp/workspace/nasw337n1/vscode_web/seoul_prompthon/vertexai_key/prompthon-prd-19-33d473e1eeb0.json"
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "./vertexai_key/prompthon-prd-19-33d473e1eeb0.json"
 aiplatform.init(project=PROJECT_ID, location=REGION)
 
 # 인덱스 목록 가져오기
@@ -30,7 +30,6 @@ INDEX_ID = "jy_engine_index"
 ENDPOINT_ID = "jy_engine_endpoint"
 
 # 환경 변수 설정
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/home/ncp/workspace/nasw337n1/vscode_web/seoul_prompthon/vertexai_key/prompthon-prd-19-33d473e1eeb0.json"
 vertexai.init(project=PROJECT_ID)
 aiplatform.init(staging_bucket=f"gs://{BUCKET}")
 
@@ -77,7 +76,6 @@ INDEX_ID = "projects/219717215394/locations/us-central1/indexes/5491985813950431
 ENDPOINT_ID = "projects/219717215394/locations/us-central1/indexEndpoints/2497655011702472704"  # 엔드포인트 ID
 
 # 환경 변수 설정
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/home/ncp/workspace/nasw337n1/vscode_web/seoul_prompthon/vertexai_key/prompthon-prd-19-33d473e1eeb0.json"
 vertexai.init(project=PROJECT_ID)
 aiplatform.init(staging_bucket=f"gs://{BUCKET}")
 

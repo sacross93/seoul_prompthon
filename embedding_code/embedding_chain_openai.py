@@ -1,5 +1,5 @@
 from multiprocessing import process
-from seoul_prompthon.Docs_Parsing_JY import extract_html, extract_image, extract_table, extract_text
+from Docs_Parsing_JY import extract_html, extract_image, extract_table, extract_text
 import pandas as pd
 import duckdb
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -7,16 +7,16 @@ from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import Chroma
 import os
 from dotenv import load_dotenv
-openaijykey='./seoul_prompthon/.env'
+openaijykey='./.env'
 load_dotenv(openaijykey)
 openai_api_key = os.getenv("OPENAI_API_KEY_SSIMU")
 os.environ["OPENAI_API_KEY"] = openai_api_key
 
-conn = duckdb.connect("./seoul_prompthon/rdbms/prompthon.db")
+conn = duckdb.connect("./rdbms/prompthon.db")
 cursor = conn.cursor()
 
 ### 실험 세팅    
-df_list = pd.read_excel('./seoul_prompthon/seoul_promp_test.xlsx')
+df_list = pd.read_excel('./seoul_promp_test.xlsx')
 
 df_list['process'] = False
 df_list['process_date'] = pd.Timestamp.now()
@@ -66,10 +66,10 @@ for i in test_df.iloc:
 
 # create vectorDB
 embeddings = OpenAIEmbeddings(openai_api_key=openai_api_key, model="text-embedding-3-large", chunk_size=chunk_size)
-# vectordb = Chroma.from_documents(documents=docs, persist_directory="./seoul_prompthon/embedding_db/20240617_openai", embedding=embeddings)
+vectordb = Chroma.from_documents(documents=docs, persist_directory="./seoul_prompthon/embedding_db/20240617_openai", embedding=embeddings)
 
 # add document
-vectordb = Chroma(persist_directory="./seoul_prompthon/embedding_db/20240617_openai", embedding_function=embeddings)
+# vectordb = Chroma(persist_directory="./seoul_prompthon/embedding_db/20240617_openai", embedding_function=embeddings)
 # vectordb.add_documents(docs)
 
 # search data

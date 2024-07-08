@@ -4,7 +4,9 @@ import sqlite3
 from urllib.parse import urljoin
 from playwright.async_api import async_playwright, TimeoutError
 from bs4 import BeautifulSoup
-os.chdir('../')
+from datetime import datetime
+
+os.chdir('C:\\Users\\jinyoungkim0308\\seoul_prompthon')
 # SQLite 데이터베이스 설정
 db_conn = sqlite3.connect('./rdbms/projects_sbiz24.db')
 
@@ -113,14 +115,27 @@ def parse_and_store(html, key):
         접수기간 TEXT,
         공고내용 TEXT,
         첨부파일 TEXT,
-        연관주제어 TEXT
+        연관주제어 TEXT,
+        created_at TEXT,
+        updated_at TEXT
     )
     """)
 
-    cursor.execute("""
-    INSERT OR IGNORE INTO projects (key, 공고일련번호, 공고명, 모집유형, 지원사업유형명, 사업년도, 공고차수, 사업기간, 접수기간, 공고내용, 첨부파일, 연관주제어) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (metadata.get('key', ''), metadata.get('공고일련번호', ''), metadata.get('공고명', ''), metadata.get('모집유형', ''), metadata.get('지원사업유형명', ''), metadata.get('사업년도', ''), metadata.get('공고차수', ''), metadata.get('사업기간', ''), metadata.get('접수기간', ''), metadata.get('공고내용', ''), metadata.get('첨부파일', ''), metadata.get('연관주제어', '')))
+    cursor.execute("SELECT 1 FROM projects WHERE key = ?", (metadata['key'],))
+    exists = cursor.fetchone()
+
+    now = datetime.now().isoformat()
+    if exists:
+        print(f"Key {metadata['key']} already exists. Updating record.")
+        cursor.execute("""
+        UPDATE projects SET 공고일련번호 = ?, 공고명 = ?, 모집유형 = ?, 지원사업유형명 = ?, 사업년도 = ?, 공고차수 = ?, 사업기간 = ?, 접수기간 = ?, 공고내용 = ?, 첨부파일 = ?, 연관주제어 = ?, updated_at = ?
+        WHERE key = ?
+        """, (metadata.get('공고일련번호', ''), metadata.get('공고명', ''), metadata.get('모집유형', ''), metadata.get('지원사업유형명', ''), metadata.get('사업년도', ''), metadata.get('공고차수', ''), metadata.get('사업기간', ''), metadata.get('접수기간', ''), metadata.get('공고내용', ''), metadata.get('첨부파일', ''), metadata.get('연관주제어', ''), now, metadata['key']))
+    else:
+        cursor.execute("""
+        INSERT INTO projects (key, 공고일련번호, 공고명, 모집유형, 지원사업유형명, 사업년도, 공고차수, 사업기간, 접수기간, 공고내용, 첨부파일, 연관주제어, created_at, updated_at) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (metadata.get('key', ''), metadata.get('공고일련번호', ''), metadata.get('공고명', ''), metadata.get('모집유형', ''), metadata.get('지원사업유형명', ''), metadata.get('사업년도', ''), metadata.get('공고차수', ''), metadata.get('사업기간', ''), metadata.get('접수기간', ''), metadata.get('공고내용', ''), metadata.get('첨부파일', ''), metadata.get('연관주제어', ''), now, now))
     db_conn.commit()
 
 
@@ -151,7 +166,7 @@ async def fetch_all_links(page):
 
 async def main():
     async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True)
+        browser = await p.chromium.launch(headless=False)
         context = await browser.new_context()
         page = await context.new_page()
         await page.goto("https://www.sbiz24.kr/#/pbanc")

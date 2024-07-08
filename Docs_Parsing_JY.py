@@ -6,12 +6,12 @@ from langchain_community.vectorstores import Chroma
 from langchain_community.document_loaders import PyMuPDFLoader, CSVLoader, PDFPlumberLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_openai import OpenAIEmbeddings
-from seoul_prompthon.load_api.load_html import load_html
-from seoul_prompthon.load_api.load_image import load_image
+from load_api.load_html import load_html
+from load_api.load_image import load_image
 import tabula
 import os
 from dotenv import load_dotenv
-openaijykey='./seoul_prompthon/.env'
+openaijykey='./.env'
 load_dotenv(openaijykey)
 openai_api_key = os.getenv("OPENAI_API_KEY_SSIMU")
 os.environ["OPENAI_API_KEY"] = openai_api_key

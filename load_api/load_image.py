@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 import base64
 from langchain.schema import Document
 from glob import glob
-from seoul_prompthon.ChatLLM import load_llm
+from ChatLLM import load_llm
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.messages import HumanMessage
 from langchain.chains.combine_documents import create_stuff_documents_chain

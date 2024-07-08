@@ -10,13 +10,14 @@ from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_community.chat_message_histories import ChatMessageHistory
 import os
 from dotenv import load_dotenv
-openaijykey='./seoul_prompthon/.env'
+openaijykey='./.env'
 load_dotenv(openaijykey)
 openai_api_key = os.getenv("OPENAI_API_KEY_SSIMU")
 os.environ["OPENAI_API_KEY"] = openai_api_key
 
-embeddings = OpenAIEmbeddings(openai_api_key=openai_api_key, model="text-embedding-3-large", chunk_size=2000)
-vectordb = Chroma(persist_directory="./seoul_prompthon/embedding_db/20240617_openai", embedding_function=embeddings)
+embeddings = OpenAIEmbeddings(openai_api_key=openai_api_key, model="text-embedding-3-large", chunk_size=3000)
+# vectordb = Chroma(persist_directory="./embedding_db/20240617_openai", embedding_function=embeddings)
+vectordb = Chroma(persist_directory="./embedding_db/20240627_openai", embedding_function=embeddings)
 
 llm = ChatOpenAI(
     model_name="gpt-4o",
@@ -51,11 +52,33 @@ history_aware_retriever = create_history_aware_retriever(
 
 
 ### Answer question ###
-system_prompt = ("""1. You are an expert who is familiar with Seoul’s policies for small business owners.
-2. You must be honest about information you do not know. If you don't know, please say 'I can't find that information.'
-3. Your answer must have a basis.
-4. Do not repeat the instructions I wrote while adding numbers in your answer.
-5. Please tell me the name of the document or website address where I can find more information. But don't lie.
+system_prompt = ("""Please follow the instructions below to answer: ```
+    1. You are an expert who is familiar with Seoul City’s small business policies.
+    2. You must be honest about information you do not know. If you don't know, please say 'I can't find that information.'
+    3. Your answer must be supported.
+    4. Please do not repeat the instructions I have written when adding numbers to your answer.
+    5. Please tell us the name of the document or website address where more information can be found. But don't lie.
+    6. Please be sure to answer in Korean.
+    7. Please attach only the original, most carefully considered explanation to your response.
+    8. Please attach the original including the webpage address corresponding to the source.
+```
+
+Here's an example of the answer I want:
+```
+If you have operated a business in Jung-gu, Seoul for more than a year, you can participate in the ‘2024 Jung-gu Customized Small Business Support Project’. Since this project targets small business owners who have been operating a business in Jung-gu for more than 6 months, you meet the application qualifications.
+
+Through this project, you can receive management improvement consulting, online conversion consulting, etc., and cost support of up to 1 million won is also available.
+
+For more information, please refer to the ‘2024 Jung-gu Customized Small Business Support Project First Half Recruitment Notice’ on the Seoul Credit Guarantee Foundation website (https://www.seoulsbdc.or.kr/).
+
+### Reference
+Recruitment notice for the first half of the 2024 Jung-gu customized small business support project
+
+2024 Jung-gu Customized Small Business Support Project** ([URL actually referenced. Please write it once.])
+```
+
+The sample answer is just an example and I would like you to write in more detail.
+Please write the original part as is, but write the answer part in as much detail as possible.
 
 Read the following explanation and write your answer using the context: {context}""")
 qa_prompt = ChatPromptTemplate.from_messages(
@@ -87,8 +110,8 @@ conversational_rag_chain = RunnableWithMessageHistory(
     output_messages_key="answer",
 )
 
-result1 = conversational_rag_chain.invoke({"input":"나는 60대에 조그마한 편의점을 하고 있는데. 내가 무슨 지원을 받을 수 있을까?"}, config={"configurable": {"session_id": "test_v1"}})
-result2 = conversational_rag_chain.invoke({"input":"나는 나이가 어떻게 된다고 했지?"}, config={"configurable": {"session_id": "test_v1"}})
+# result1 = conversational_rag_chain.invoke({"input":"나는 60대에 조그마한 편의점을 하고 있는데. 내가 무슨 지원을 받을 수 있을까?"}, config={"configurable": {"session_id": "test_v1"}})
+# result2 = conversational_rag_chain.invoke({"input":"나는 나이가 어떻게 된다고 했지?"}, config={"configurable": {"session_id": "test_v1"}})
 
 result1 = conversational_rag_chain.invoke(
     {
@@ -96,4 +119,4 @@ result1 = conversational_rag_chain.invoke(
     },
     config={"configurable": {"session_id": "test_v1"}}
 )
-result1
+print(result1['answer'])
